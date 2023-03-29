@@ -1,4 +1,4 @@
-import { Component } from 'react';
+import { useState, useEffect } from 'react';
 
 import { Filter } from './Filter/Filter';
 import { ContactList } from './ContactList/ContactList';
@@ -7,34 +7,20 @@ import { Container } from './Phonebook.styled';
 
 const CONTACTS_LOCAL_STORAGE_KEY = 'contacts';
 
-export class Phonebook extends Component {
-  state = {
-    contacts: [],
-    filter: '',
-  };
+export const Phonebook = () => {
+  const [contacts, setContacts] = useState(
+    JSON.parse(window.localStorage.getItem(CONTACTS_LOCAL_STORAGE_KEY)) ?? []
+  );
+  const [filter, setFilter] = useState('');
 
-  componentDidMount() {
-    const localData = JSON.parse(
-      localStorage.getItem(CONTACTS_LOCAL_STORAGE_KEY)
+  useEffect(() => {
+    window.localStorage.setItem(
+      CONTACTS_LOCAL_STORAGE_KEY,
+      JSON.stringify(contacts)
     );
+  }, [contacts]);
 
-    if (localData) {
-      this.setState({ contacts: localData });
-    }
-  }
-
-  componentDidUpdate(_, preState) {
-    if (preState.contacts.length !== this.state.contacts.length) {
-      localStorage.setItem(
-        CONTACTS_LOCAL_STORAGE_KEY,
-        JSON.stringify(this.state.contacts)
-      );
-    }
-  }
-
-  handleAddContact = newContact => {
-    const { contacts } = this.state;
-
+  const handleAddContact = newContact => {
     const isDuplicate = contacts.some(
       contact => contact.name === newContact.name
     );
@@ -43,43 +29,31 @@ export class Phonebook extends Component {
       return;
     }
 
-    this.setState(prev => ({
-      contacts: [...prev.contacts, newContact],
-    }));
+    setContacts([...contacts, newContact]);
   };
 
-  handleFilterChange = e => {
-    const { value } = e.target;
-
-    this.setState({ filter: value });
+  const handleFilterChange = e => {
+    setFilter(e.target.value);
   };
 
-  deleteContact = id =>
-    this.setState(prev => ({
-      contacts: prev.contacts.filter(contact => contact.id !== id),
-    }));
+  const deleteContact = id =>
+    setContacts(prev => prev.filter(contact => contact.id !== id));
 
-  render() {
-    const { contacts, filter } = this.state;
-    return (
-      <Container>
-        <h1>Phone Book</h1>
+  return (
+    <Container>
+      <h1>Phone Book</h1>
 
-        <ContactForm addContact={this.handleAddContact}></ContactForm>
+      <ContactForm addContact={handleAddContact}></ContactForm>
 
-        <h2>Contacts:</h2>
+      <h2>Contacts:</h2>
 
-        <Filter
-          filter={filter}
-          handleFilterChange={this.handleFilterChange}
-        ></Filter>
+      <Filter filter={filter} handleFilterChange={handleFilterChange}></Filter>
 
-        <ContactList
-          contacts={contacts}
-          filter={filter}
-          onDeleteContact={this.deleteContact}
-        ></ContactList>
-      </Container>
-    );
-  }
-}
+      <ContactList
+        contacts={contacts}
+        filter={filter}
+        onDeleteContact={deleteContact}
+      ></ContactList>
+    </Container>
+  );
+};
